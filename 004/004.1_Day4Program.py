@@ -11,7 +11,7 @@ while True:
             user_input = input("Enter an item: ")
             items.append(user_input)
         case 'edit':
-            x = 0
+            x = 0 # Use variable 'x' as an index counter
             for item in items:
                 print(x, item)
                 x = x + 1
