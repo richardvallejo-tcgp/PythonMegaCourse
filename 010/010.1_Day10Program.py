@@ -11,6 +11,8 @@ filename = f"{(3 - len(course_day)) * '0'}{course_day}.0_Day{course_day}Files/{(
 with open(filename, 'r') as file:
     items = file.readlines() # Create our items list which can be modified and written back to the file periodically
 
+input_text = "Type 'Show', 'Add', 'Edit', 'Complete' or 'Exit': "
+
 # I want to start each execution by displaying the saved list of items
 user_input = "Show"
 
@@ -19,53 +21,80 @@ while True:
     message = "End of request"
     user_action = user_input.lower().strip() # Enable flexible matching by forcing any input to lowercase and remove whitespace
 
-    if user_action.startswith('show'): # Because the script sets "Show" as the option initially, this will always run first
-        print("---")
-
-        # I like this method for removing line breaks because we are performing other operations during the for loop
-        for index, item in enumerate(items):
-            item = item.strip('\n')
-            print(f"{index}-{item}")
-
-        message = "---"
-
-    # There is some code I want to run for multiple conditions (writing to file), so I will nest conditional statements
-    elif user_action.startswith('add') or user_action.startswith('edit') or user_action.startswith('complete'):
-        # Create a separate conditional block to handle each individual condition as necessary
-        if user_action.startswith('add'):
-            new_item = user_input[3:].strip()
-            items.append(f"{new_item}\n")
-
-            message = f"Item {len(items)-1} '{new_item}' was added to the list."
-
-        elif user_action.startswith('edit'):
-            item_index = int(user_input[4:])
-            orig_item = items[item_index].strip('\n')
-
-            new_item = input(f"Enter the new item to replace '{orig_item}': ").strip()
-            items[item_index] = f"{new_item}\n"
-
-            message = f"Item {item_index} '{orig_item}' was changed to '{new_item}'."
-
-        elif user_action.startswith('complete'):
-            item_index = int(user_input[8:])
-            removed_item = items.pop(item_index).strip('\n')
-            
-            message = f"Item {item_index} '{removed_item}' was removed from the list."
-      
-        # Write to the file at the end of the multi-condition block
-        with open(filename, 'w') as file:
-              file.writelines(items)
-
-    elif user_action.startswith('exit'):
+    # Provide a quick exit when requested, and avoid running any code in the 'finally' block below
+    if user_action.startswith('exit'):
         break
     
     else:
-        message = "Invalid command!"
+        try:
+            if user_action.startswith('show'): # Because the script sets "Show" as the option initially, this will always run first
+                print("---")
 
-    print(f"{message}\n") # Print a message to confirm what action was taken
+                if len(items) > 0:
+                    # I like this method for removing line breaks because we are performing other operations during the for loop
+                    for index, item in enumerate(items):
+                        item = item.strip('\n')
+                        print(f"{index}-{item}")
+                else:
+                    print("No items in list. Type 'add' followed by an item description to add your first item!")
 
-    # The selected action will carry over to the next execution of the for loop
-    user_input = input("Type 'Show', 'Add', 'Edit', 'Complete' or 'Exit': ")
+                message = "---"
+
+            # There is some code I want to run for multiple conditions (writing to file), so I will nest conditional statements
+            elif user_action.startswith('add') or user_action.startswith('edit') or user_action.startswith('complete'):
+                # Create a separate conditional block to handle each individual condition as necessary
+                if user_action.startswith('add'):
+                    new_item = user_input[3:].strip()
+                    
+                    # Enforce item string length greater than zero
+                    if len(new_item) > 0:
+                        items.append(f"{new_item}\n")
+                        message = f"Item {len(items)-1} '{new_item}' was added to the list."
+
+                    else:
+                        message = f"Items cannot be blank."
+
+                elif user_action.startswith('edit'):
+                    item_index = int(user_input[4:])
+                    orig_item = items[item_index].strip('\n')
+
+                    new_item = input(f"Enter the new item to replace '{orig_item}': ").strip()
+
+                    # Enforce item string length greater than zero
+                    if len(new_item) > 0:
+                        items[item_index] = f"{new_item}\n"
+                        message = f"Item {item_index} '{orig_item}' was changed to '{new_item}'."
+                    
+                    else:
+                        message = f"Items cannot be blank."
+
+                elif user_action.startswith('complete'):
+                    item_index = int(user_input[8:])
+                    removed_item = items.pop(item_index).strip('\n')
+                    
+                    message = f"Item {item_index} '{removed_item}' was removed from the list."
+
+                # Write to the file at the end of the multi-condition block
+                with open(filename, 'w') as file:
+                      file.writelines(items)
+
+            else:
+                message = "Invalid command!"
+
+        except ValueError:
+            message = "The selected command expects an integer value."
+            continue
+        
+        except IndexError:
+            message = "The selected index is out of range."
+            continue
+
+        # The 'finally' condition allows us to run code regardless of whether there was an error or not, but it also always runs before a 'break' above will exit the loop
+        finally:
+            print(f"{message}\n") # Print a message to confirm what action was taken
+
+            # The selected action will carry over to the next execution of the for loop
+            # This runs in the 'finally' block so that input is requested whether good or bad input was given previously
+            user_input = input(input_text)
 
 print("Closing...\n")
